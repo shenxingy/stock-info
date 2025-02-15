@@ -27,4 +27,3 @@ Don't forget to set up the **Alpha Vantage API key** in the environment variable
 ```
 ALPHAVANTAGE_API_KEY=your_api_key_here
 ```
-
