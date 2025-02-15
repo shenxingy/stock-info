@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for
 from alpha_vantage_service import AlphaVantageService
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
 import os
 
@@ -30,7 +31,12 @@ def stock_page(symbol):
     overview = alpha_vantage.get_company_overview(symbol)
     quote = alpha_vantage.get_global_quote(symbol)
     time_series = alpha_vantage.get_daily_time_series(symbol)
+    
+    one_year_ago = datetime.now() - timedelta(days=365)
 
+    highs_52 = []
+    lows_52 = []
+            
     # 2. 判断是否是无效 Symbol（检查 overview 中是否有 "Name" 且不为空）
     if not overview or "Name" not in overview or not overview["Name"]:
         error_msg = f"The stock symbol '{symbol}' is invalid. Please try again."
@@ -52,11 +58,32 @@ def stock_page(symbol):
             previous_close="N/A",
             open_price="N/A",
             volume="N/A",
+            high_52_week = "N/A",
+            low_52_week = "N/A",
             dates=[],
             closes=[]
         )
 
     # 3. 如果 Symbol 有效，提取所需字段
+    for date_str, daily_info in time_series.items():
+    # Parse date from string
+        date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+        if date_obj >= one_year_ago:
+            # "2. high" or "3. high" or "2. high adjusted"? 
+            # Check how your data is named—commonly "2. high"
+            daily_high = float(daily_info["2. high"])
+            daily_low = float(daily_info["3. low"])
+            highs_52.append(daily_high)
+            lows_52.append(daily_low)
+        
+        # Safely compute the 52-week high/low if we have at least one day
+        if highs_52 and lows_52:
+            high_52_week = max(highs_52)
+            low_52_week = min(lows_52)
+        else:
+            high_52_week = "N/A"
+            low_52_week = "N/A"
+    
     company_name = overview.get("Name", "N/A")
     sector = overview.get("Sector", "N/A")
     industry = overview.get("Industry", "N/A")
@@ -71,6 +98,7 @@ def stock_page(symbol):
     previous_close = quote.get("08. previous close", "N/A")
     open_price = quote.get("02. open", "N/A")
     volume = quote.get("06. volume", "N/A")
+    latest_news = alpha_vantage.get_stock_news(symbol, limit=5)
 
     # 4. 处理时间序列数据，提取日期和收盘价，以供画图
     dates = []
@@ -97,6 +125,9 @@ def stock_page(symbol):
         previous_close=previous_close,
         open_price=open_price,
         volume=volume,
+        high_52_week=high_52_week,
+        low_52_week=low_52_week,
+        news=latest_news,
         dates=dates,
         closes=closes
     )

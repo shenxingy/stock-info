@@ -46,3 +46,49 @@ class AlphaVantageService:
         response = requests.get(self.base_url, params=params)
         data = response.json()
         return data.get("Time Series (Daily)", {})
+
+    def get_stock_news(self, symbol: str, limit=5) -> list:
+        """
+        Fetch the latest news articles about the given stock symbol.
+        Return a list of dictionaries with {title, summary, url}.
+        """
+        url = "https://www.alphavantage.co/query"
+        params = {
+            "function": "NEWS_SENTIMENT",
+            "tickers": symbol,
+            "limit": limit,  # request the number of articles
+            "sort": "LATEST",
+            "apikey": self.api_key
+        }
+        resp = requests.get(url, params=params)
+        data = resp.json()
+
+        # The structure of this JSON can vary, you need to check what the
+        # actual response looks like.
+        # For example, data might look like:
+        # {
+        #   "items": 5,
+        #   "feed": [
+        #       {
+        #         "title": "...",
+        #         "url": "...",
+        #         "summary": "...",
+        #         ... 
+        #       },
+        #       ...
+        #   ]
+        # }
+        # We'll parse out the "feed" portion.
+
+        articles = []
+        if "feed" in data:
+            for item in data["feed"][:5]:
+                title = item.get("title", "No Title")
+                url = item.get("url", "#")
+                summary = item.get("summary", "No Summary")
+                articles.append({
+                    "title": title,
+                    "url": url,
+                    "summary": summary
+                })
+        return articles

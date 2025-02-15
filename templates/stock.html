@@ -41,6 +41,8 @@
         <div class="card-header">Company Overview</div>
         <div class="card-body">
           <ul class="list-unstyled mb-0">
+            <li><strong>52-Week High:</strong> {{ high_52_week }}</li>
+            <li><strong>52-Week Low:</strong> {{ low_52_week }}</li>
             <li><strong>Sector:</strong> {{ sector }}</li>
             <li><strong>Industry:</strong> {{ industry }}</li>
             <li><strong>Market Cap:</strong> {{ market_cap }}</li>
@@ -98,6 +100,16 @@
       Plotly.newPlot('chart', [trace], layout);
     </script>
   {% endif %}
+
+  <h2>Recent News</h2>
+  <div class="list-group">
+    {% for article in news %}
+      <a href="{{ article.url }}" class="list-group-item list-group-item-action" target="_blank">
+        <h5 class="mb-1">{{ article.title }}</h5>
+        <p class="mb-1">{{ article.summary }}</p>
+      </a>
+    {% endfor %}
+  </div>
 
   <!-- Bootstrap JS (Optional, if interaction is needed) -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
