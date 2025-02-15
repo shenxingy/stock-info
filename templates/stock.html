@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <!-- 引入你自己的 CSS，若需自定义样式 -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <!-- 引入 Bootstrap -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
+  <title>{{ symbol }} Stock Information</title>
+</head>
+<body class="container my-4">
+
+  <!-- 页面标题 -->
+  <h1 class="mb-4">{{ symbol }} - {{ company_name }}</h1>
+
+  <!-- 搜索框：可以继续输入其他 Symbol -->
+  <form class="row g-3 mb-4" action="{{ url_for('handle_stock_form') }}" method="POST">
+    <div class="col-auto">
+      <label for="symbol" class="col-form-label fw-bold">Stock Symbol:</label>
+    </div>
+    <div class="col-auto">
+      <input type="text" class="form-control" name="symbol" id="symbol" placeholder="e.g. AAPL" />
+    </div>
+    <div class="col-auto">
+      <button type="submit" class="btn btn-primary">查询</button>
+    </div>
+  </form>
+
+  <!-- 信息区：用 Bootstrap 的栅格系统分左右两列 -->
+  <div class="row mb-4">
+    <!-- 公司概况 -->
+    <div class="col-md-6 mb-3">
+      <div class="card">
+        <div class="card-header">公司概况</div>
+        <div class="card-body">
+          <ul class="list-unstyled mb-0">
+            <li><strong>Sector:</strong> {{ sector }}</li>
+            <li><strong>Industry:</strong> {{ industry }}</li>
+            <li><strong>Market Cap:</strong> {{ market_cap }}</li>
+            <li><strong>PE Ratio:</strong> {{ pe_ratio }}</li>
+            <li><strong>EPS:</strong> {{ eps }}</li>
+            <li><strong>Dividend:</strong> {{ dividend }}</li>
+            <li><strong>Dividend Yield:</strong> {{ dividend_yield }}</li>
+            <li><strong>Exchange:</strong> {{ exchange }}</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- 行情信息 -->
+    <div class="col-md-6 mb-3">
+      <div class="card">
+        <div class="card-header">行情信息</div>
+        <div class="card-body">
+          <ul class="list-unstyled mb-0">
+            <li><strong>Current Price:</strong> {{ current_price }}</li>
+            <li><strong>Previous Close:</strong> {{ previous_close }}</li>
+            <li><strong>Open:</strong> {{ open_price }}</li>
+            <li><strong>Volume:</strong> {{ volume }}</li>
+            <!-- 52周最高/最低可以自行计算或从其他接口获取 -->
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 股价图表（过去一年） -->
+  <div class="card mb-4">
+    <div class="card-header">近一年股价图</div>
+    <div class="card-body">
+      <div id="chart" style="height: 500px;"></div>
+    </div>
+  </div>
+
+  <!-- Plotly JS 依赖和绘制脚本 -->
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <script>
+    const dates = {{ dates|tojson }};
+    const closes = {{ closes|tojson }};
+
+    const trace = {
+      x: dates,
+      y: closes,
+      type: 'scatter'
+    };
+    const layout = {
+      title: '{{ symbol }} Closing Prices (Past Year)'
+    };
+
+    Plotly.newPlot('chart', [trace], layout);
+  </script>
+
+  <!-- Bootstrap JS (可选，如果需要组件交互) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
