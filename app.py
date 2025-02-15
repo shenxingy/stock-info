@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, redirect, url_for
 from alpha_vantage_service import AlphaVantageService
 from dotenv import load_dotenv
+import os
+
 load_dotenv() 
 
 app = Flask(__name__)
@@ -29,8 +31,32 @@ def stock_page(symbol):
     quote = alpha_vantage.get_global_quote(symbol)
     time_series = alpha_vantage.get_daily_time_series(symbol)
 
-    # 2. 整理数据，提取我们需要的字段
-    # 这里仅做演示，更多字段自行补充
+    # 2. 判断是否是无效 Symbol（检查 overview 中是否有 "Name" 且不为空）
+    if not overview or "Name" not in overview or not overview["Name"]:
+        error_msg = f"The stock symbol '{symbol}' is invalid. Please try again."
+        # 返回模板，并将关键字段都设为 "N/A" 或空，防止模板中报错
+        return render_template(
+            "stock.html",
+            error_msg=error_msg,
+            symbol="N/A",
+            company_name="N/A",
+            sector="N/A",
+            industry="N/A",
+            market_cap="N/A",
+            pe_ratio="N/A",
+            eps="N/A",
+            dividend="N/A",
+            dividend_yield="N/A",
+            exchange="N/A",
+            current_price="N/A",
+            previous_close="N/A",
+            open_price="N/A",
+            volume="N/A",
+            dates=[],
+            closes=[]
+        )
+
+    # 3. 如果 Symbol 有效，提取所需字段
     company_name = overview.get("Name", "N/A")
     sector = overview.get("Sector", "N/A")
     industry = overview.get("Industry", "N/A")
@@ -45,19 +71,18 @@ def stock_page(symbol):
     previous_close = quote.get("08. previous close", "N/A")
     open_price = quote.get("02. open", "N/A")
     volume = quote.get("06. volume", "N/A")
-    # 如果要 52-week high/low，需要另想办法（有些字段需要额外接口或由自己在 time_series 数据里遍历计算）
 
-    # 3. 将时间序列数据处理后，可能直接传到模板，或者后端生成图表数据再传
-    # 例如，将日期和收盘价整理为一个列表:
+    # 4. 处理时间序列数据，提取日期和收盘价，以供画图
     dates = []
     closes = []
     for date_str, daily_info in sorted(time_series.items()):
         dates.append(date_str)
         closes.append(float(daily_info["4. close"]))
 
-    # 4. 渲染模板
+    # 5. 正常渲染模板
     return render_template(
         "stock.html",
+        error_msg=None,  # 无错误信息
         symbol=symbol,
         company_name=company_name,
         sector=sector,
